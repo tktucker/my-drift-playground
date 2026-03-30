@@ -7,6 +7,7 @@ zone        = "us-central1-a"
 environment = "dev"
 
 # Drift detector settings
-alert_email = "tktucker@gmail.com"
-repo_uri    = "https://github.com/tktucker/my-drift-playground"  # ← your repo
-repo_branch = "main"
+alert_email     = "tktucker@gmail.com"
+repo_connection = "Github"                        # ← from: gcloud builds connections list
+repo_name       = "tktucker-my-drift-playground"  # ← from: gcloud builds repositories list
+repo_branch     = "main"

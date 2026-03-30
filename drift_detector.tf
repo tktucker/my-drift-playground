@@ -95,7 +95,7 @@ resource "google_cloudbuild_trigger" "drift_check" {
   }
 
   git_file_source {
-    path       = "infra/cloudbuild-drift.yaml"
+    path       = "cloudbuild-drift.yaml"
     repository = "projects/${var.project_id}/locations/${var.region}/connections/${var.repo_connection}/repositories/${var.repo_name}"
     revision   = "refs/heads/${var.repo_branch}"
     repo_type  = "GITHUB"

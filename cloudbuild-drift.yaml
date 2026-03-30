@@ -20,7 +20,7 @@ steps:
   # Step 2: Terraform init
   - id: terraform-init
     name: 'hashicorp/terraform:1.9'
-    dir: 'infra'
+    dir: '.'
     entrypoint: 'terraform'
     args:
       - 'init'
@@ -31,7 +31,7 @@ steps:
   # Step 3: Terraform plan with drift detection
   - id: terraform-plan-drift-check
     name: 'hashicorp/terraform:1.9'
-    dir: 'infra'
+    dir: '.'
     entrypoint: 'sh'
     args:
       - '-c'
