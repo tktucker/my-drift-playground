@@ -38,7 +38,7 @@ steps:
       - |
         echo "════════════════════════════════════════════════"
         echo "  Running Terraform Plan — Drift Detection"
-        echo "  $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo "  $$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         echo "════════════════════════════════════════════════"
 
         terraform plan \
@@ -53,32 +53,32 @@ steps:
           -out=/tmp/plan.tfplan \
           2>&1 | tee /tmp/plan-output.txt
 
-        PLAN_EXIT_CODE=$?
+        PLAN_EXIT_CODE=$$?
 
         echo ""
-        echo "Plan exit code: $PLAN_EXIT_CODE"
+        echo "Plan exit code: $$PLAN_EXIT_CODE"
 
-        if [ $PLAN_EXIT_CODE -eq 0 ]; then
-          echo "✅ NO DRIFT — infrastructure matches Terraform state."
-          echo "NO_DRIFT_DETECTED: All resources in sync at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        if [ $$PLAN_EXIT_CODE -eq 0 ]; then
+          echo "NO DRIFT — infrastructure matches Terraform state."
+          echo "NO_DRIFT_DETECTED: All resources in sync at $$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
-        elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+        elif [ $$PLAN_EXIT_CODE -eq 2 ]; then
           echo ""
-          echo "🚨 DRIFT_DETECTED: Terraform plan found changes!"
+          echo "DRIFT_DETECTED: Terraform plan found changes!"
           echo ""
-          echo "DRIFT_DETECTED: Infrastructure drift found at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "DRIFT_DETECTED: Infrastructure drift found at $$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "DRIFT_DETECTED: Review the plan output above and take action."
           echo ""
 
           # Extract summary line (e.g., "Plan: 1 to add, 2 to change, 0 to destroy.")
-          SUMMARY=$(grep -E "^Plan:" /tmp/plan-output.txt || echo "See full output above")
-          echo "DRIFT_DETECTED_SUMMARY: $SUMMARY"
+          SUMMARY=$$(grep -E "^Plan:" /tmp/plan-output.txt || echo "See full output above")
+          echo "DRIFT_DETECTED_SUMMARY: $$SUMMARY"
 
           # Exit 0 so the build succeeds — the alert fires from the log entry
           exit 0
 
         else
-          echo "❌ ERROR: Terraform plan failed with exit code $PLAN_EXIT_CODE"
+          echo "ERROR: Terraform plan failed with exit code $$PLAN_EXIT_CODE"
           exit 1
         fi
 
