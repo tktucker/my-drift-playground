@@ -101,6 +101,16 @@ resource "google_cloudbuild_trigger" "drift_check" {
     repo_type  = "GITHUB"
   }
 
+  substitutions = {
+    _PROJECT_ID     = var.project_id
+    _STATE_BUCKET   = google_storage_bucket.tf_state.name
+    _REGION         = var.region
+    _ALERT_EMAIL    = var.alert_email
+    _REPO_CONNECTION = var.repo_connection
+    _REPO_NAME      = var.repo_name
+    _REPO_BRANCH    = var.repo_branch
+  }
+
   depends_on = [google_project_service.apis]
 }
 
