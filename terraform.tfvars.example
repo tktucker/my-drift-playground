@@ -1,0 +1,12 @@
+# Copy this file to terraform.tfvars and fill in your values
+# cp terraform.tfvars.example terraform.tfvars
+
+project_id  = "my-drift-playground"   # ← your GCP project ID
+region      = "us-central1"
+zone        = "us-central1-a"
+environment = "dev"
+
+# Drift detector settings
+alert_email = "tktucker@gmail.com"
+repo_uri    = "https://github.com/tktucker/my-drift-playground"  # ← your repo
+repo_branch = "main"

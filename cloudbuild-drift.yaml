@@ -1,0 +1,96 @@
+##──────────────────────────────────────────────────────────────
+## Cloud Build — Drift Detection Pipeline
+##
+## Runs `terraform plan -detailed-exitcode` and logs a
+## structured message if drift is detected (exit code 2).
+##
+## Exit codes from `terraform plan -detailed-exitcode`:
+##   0 = no changes (infrastructure matches state)
+##   1 = error running plan
+##   2 = changes detected (DRIFT!)
+##──────────────────────────────────────────────────────────────
+
+steps:
+  # Step 1: Install Terraform
+  - id: install-terraform
+    name: 'hashicorp/terraform:1.9'
+    entrypoint: 'terraform'
+    args: ['version']
+
+  # Step 2: Terraform init
+  - id: terraform-init
+    name: 'hashicorp/terraform:1.9'
+    dir: 'infra'
+    entrypoint: 'terraform'
+    args:
+      - 'init'
+      - '-backend-config=bucket=${_STATE_BUCKET}'
+      - '-backend-config=prefix=drift-playground'
+      - '-no-color'
+
+  # Step 3: Terraform plan with drift detection
+  - id: terraform-plan-drift-check
+    name: 'hashicorp/terraform:1.9'
+    dir: 'infra'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        echo "════════════════════════════════════════════════"
+        echo "  Running Terraform Plan — Drift Detection"
+        echo "  $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo "════════════════════════════════════════════════"
+
+        terraform plan \
+          -detailed-exitcode \
+          -no-color \
+          -var="project_id=${_PROJECT_ID}" \
+          -var="region=${_REGION}" \
+          -var="alert_email=${_ALERT_EMAIL}" \
+          -var="repo_uri=${_REPO_URI}" \
+          -var="repo_branch=${_REPO_BRANCH}" \
+          -out=/tmp/plan.tfplan \
+          2>&1 | tee /tmp/plan-output.txt
+
+        PLAN_EXIT_CODE=$?
+
+        echo ""
+        echo "Plan exit code: $PLAN_EXIT_CODE"
+
+        if [ $PLAN_EXIT_CODE -eq 0 ]; then
+          echo "✅ NO DRIFT — infrastructure matches Terraform state."
+          echo "NO_DRIFT_DETECTED: All resources in sync at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+        elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+          echo ""
+          echo "🚨 DRIFT_DETECTED: Terraform plan found changes!"
+          echo ""
+          echo "DRIFT_DETECTED: Infrastructure drift found at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "DRIFT_DETECTED: Review the plan output above and take action."
+          echo ""
+
+          # Extract summary line (e.g., "Plan: 1 to add, 2 to change, 0 to destroy.")
+          SUMMARY=$(grep -E "^Plan:" /tmp/plan-output.txt || echo "See full output above")
+          echo "DRIFT_DETECTED_SUMMARY: $SUMMARY"
+
+          # Exit 0 so the build succeeds — the alert fires from the log entry
+          exit 0
+
+        else
+          echo "❌ ERROR: Terraform plan failed with exit code $PLAN_EXIT_CODE"
+          exit 1
+        fi
+
+substitutions:
+  _PROJECT_ID: ''           # set by trigger or scheduler
+  _STATE_BUCKET: ''         # e.g., my-project-tf-state
+  _REGION: 'us-central1'
+  _ALERT_EMAIL: 'tktucker@gmail.com'
+  _REPO_URI: ''             # e.g., https://github.com/you/repo
+  _REPO_BRANCH: 'main'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_MEDIUM'
+
+timeout: '600s'  # 10 minute max
