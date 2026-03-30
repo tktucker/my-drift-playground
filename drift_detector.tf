@@ -87,18 +87,18 @@ resource "google_cloudbuild_trigger" "drift_check" {
 
   service_account = "projects/${var.project_id}/serviceAccounts/${google_service_account.drift_detector_sa.email}"
 
-  # Source: pull from your repo (update this to your actual repo)
+  # 2nd gen repository connection — source_to_build for manual trigger support
   source_to_build {
-    uri       = var.repo_uri
-    ref       = var.repo_branch
-    repo_type = "GITHUB"
+    repository = "projects/${var.project_id}/locations/${var.region}/connections/${var.repo_connection}/repositories/${var.repo_name}"
+    ref        = "refs/heads/${var.repo_branch}"
+    repo_type  = "GITHUB"
   }
 
   git_file_source {
-    path      = "infra/cloudbuild-drift.yaml"
-    uri       = var.repo_uri
-    revision  = var.repo_branch
-    repo_type = "GITHUB"
+    path       = "infra/cloudbuild-drift.yaml"
+    repository = "projects/${var.project_id}/locations/${var.region}/connections/${var.repo_connection}/repositories/${var.repo_name}"
+    revision   = "refs/heads/${var.repo_branch}"
+    repo_type  = "GITHUB"
   }
 
   depends_on = [google_project_service.apis]
@@ -120,7 +120,11 @@ resource "google_cloud_scheduler_job" "drift_check_cron" {
   http_target {
     http_method = "POST"
     uri         = "https://cloudbuild.googleapis.com/v1/projects/${var.project_id}/locations/${var.region}/triggers/${google_cloudbuild_trigger.drift_check.trigger_id}:run"
-    body        = base64encode("{\"branchName\":\"${var.repo_branch}\"}")
+    body        = base64encode(jsonencode({ source = { branch = var.repo_branch } }))
+
+    headers = {
+      "Content-Type" = "application/json"
+    }
 
     oauth_token {
       service_account_email = google_service_account.scheduler_sa.email

@@ -35,9 +35,16 @@ variable "alert_email" {
   default     = "tktucker@gmail.com"
 }
 
-variable "repo_uri" {
-  description = "GitHub repository URI for Cloud Build (e.g., https://github.com/you/repo)"
+variable "repo_connection" {
+  description = "Cloud Build 2nd gen connection name (e.g., Github)"
   type        = string
+  default     = "Github"
+}
+
+variable "repo_name" {
+  description = "Cloud Build linked repository name (from `gcloud builds repositories list`)"
+  type        = string
+  default     = "tktucker-my-drift-playground"
 }
 
 variable "repo_branch" {
